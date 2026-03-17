@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDNN — Self-Diagnosing Neural Network</title>
+  <meta name="description" content="Upload any image and let the Self-Diagnosing Neural Network predict its class with calibrated confidence and error probability scores." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── Hero Header ─────────────────────────────────────────── -->
+  <header class="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-orb orb-1"></div>
+    <div class="hero-orb orb-2"></div>
+    <div class="hero-content">
+      <div class="badge">🤖 Autonomous Perception</div>
+      <h1 class="hero-title">
+        Self-Diagnosing<br/>
+        <span class="gradient-text">Neural Network</span>
+      </h1>
+      <p class="hero-subtitle">
+        Upload any image. The SDNN predicts its class — and tells you
+        <em>how confident</em> it is, and <em>how likely</em> it made a mistake.
+      </p>
+      <div class="hero-chips">
+        <span class="chip">ResNet-18 Backbone</span>
+        <span class="chip">3-Head Architecture</span>
+        <span class="chip">CIFAR-10</span>
+        <span class="chip">Calibrated Confidence</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main Content ────────────────────────────────────────── -->
+  <main class="main-container">
+
+    <!-- Upload Section -->
+    <section class="upload-section">
+      <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Upload image">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="upload-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p class="upload-title">Drop your image here</p>
+        <p class="upload-sub">or <span class="upload-link">click to browse</span></p>
+        <p class="upload-formats">JPEG · PNG · WebP · BMP</p>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview-card" id="previewCard" hidden>
+        <img id="previewImg" src="" alt="Uploaded image preview" />
+        <button class="change-btn" id="changeBtn" type="button">Change Image</button>
+      </div>
+    </section>
+
+    <!-- Analyze Button -->
+    <div class="analyze-wrap" id="analyzeWrap" hidden>
+      <button class="btn-analyze" id="analyzeBtn" type="button">
+        <span id="analyzeBtnText">Analyze with SDNN</span>
+        <div class="btn-spinner" id="btnSpinner" hidden></div>
+      </button>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="toast toast-error" id="errorToast" hidden>
+      <span class="toast-icon">⚠️</span>
+      <span id="errorMsg"></span>
+      <button class="toast-close" id="toastClose" type="button">✕</button>
+    </div>
+
+    <!-- Results Panel -->
+    <section class="results-panel" id="resultsPanel" hidden>
+
+      <!-- Top: Main Prediction -->
+      <div class="result-hero-card">
+        <div class="result-emoji" id="resultEmoji"></div>
+        <div class="result-meta">
+          <span class="result-label">Predicted Class</span>
+          <h2 class="result-class" id="resultClass"></h2>
+          <span class="result-context" id="resultContext"></span>
+        </div>
+        <div class="reliability-badge" id="reliabilityBadge"></div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+
+        <!-- Confidence Card -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">🎯</span>
+            <span class="stat-name">Confidence Score</span>
+            <span class="stat-info" title="The calibrated probability that the model's prediction is correct.">ⓘ</span>
+          </div>
+          <div class="stat-value" id="confidenceValue">—</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar stat-bar-confidence" id="confidenceBar"></div>
+          </div>
+          <p class="stat-desc">Model's calibrated self-confidence</p>
+        </div>
+
+        <!-- Error Probability Card -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">🔍</span>
+            <span class="stat-name">Error Probability</span>
+            <span class="stat-info" title="The model's estimate of how likely it made a mistake on this input.">ⓘ</span>
+          </div>
+          <div class="stat-value" id="errorProbValue">—</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar stat-bar-error" id="errorProbBar"></div>
+          </div>
+          <p class="stat-desc">Likelihood of a prediction mistake</p>
+        </div>
+
+        <!-- Max Softmax Card -->
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">📊</span>
+            <span class="stat-name">Top-1 Probability</span>
+            <span class="stat-info" title="Raw softmax probability for the top predicted class.">ⓘ</span>
+          </div>
+          <div class="stat-value" id="softmaxValue">—</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar stat-bar-softmax" id="softmaxBar"></div>
+          </div>
+          <p class="stat-desc">Raw softmax output for top class</p>
+        </div>
+
+      </div>
+
+      <!-- Full Class Distribution -->
+      <div class="distribution-card">
+        <h3 class="dist-title">All-Class Probability Distribution</h3>
+        <p class="dist-sub">Softmax probabilities across all 10 CIFAR-10 classes</p>
+        <div class="dist-chart" id="distChart"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer class="footer">
+    <p>SDNN · ResNet-18 + 3 Diagnostic Heads · CIFAR-10 · Built for Autonomous Perception</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

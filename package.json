@@ -1,0 +1,10 @@
+{
+  "name": "sdnn-web-ui",
+  "version": "1.0.0",
+  "description": "SDNN Web UI runner",
+  "scripts": {
+    "dev": "./.venv/bin/python app.py --port 8080"
+  },
+  "author": "",
+  "license": "ISC"
+}
