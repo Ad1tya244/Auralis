@@ -15,10 +15,11 @@ For every input image, the SDNN outputs:
 ```
 Prediction:      Truck          ← what it sees
 Confidence:      0.84           ← how sure it is (calibrated)
+Entropy:         0.45           ← prediction uncertainty
 Error Probability: 0.18         ← probability it made a mistake
 ```
 
-If `error_prob > 0.3`, a downstream autonomous system can trigger a safe fallback (e.g., slow down, defer to human operator).
+If `confidence < 0.7`, `entropy > 1.5`, or `error_prob > 0.4`, the model rejects the sample as "Unknown / Out-of-Distribution". A downstream autonomous system can then trigger a safe fallback (e.g., slow down, defer to human operator).
 
 ---
 
