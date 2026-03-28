@@ -3,7 +3,7 @@ evaluate_trained.py
 -------------------
 Run full evaluation on the provided trained + calibrated SDNN checkpoint:
 
-    models/calibrated_sdnn_final.pth
+    models/best_sdnn.pth
 
 This script:
   1. Loads the checkpoint (handles model_state_dict key + temperature)
@@ -17,7 +17,7 @@ Usage:
     python evaluate_trained.py
 
     # Custom checkpoint or device:
-    python evaluate_trained.py --checkpoint models/calibrated_sdnn_final.pth --device cpu
+    python evaluate_trained.py --checkpoint models/best_sdnn.pth --device cpu
 """
 
 import argparse
@@ -146,7 +146,7 @@ def run(checkpoint_path: str, device_str: str = "auto"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="models/calibrated_sdnn_final.pth")
+    parser.add_argument("--checkpoint", default="models/best_sdnn.pth")
     parser.add_argument("--device",     default="auto")
     args = parser.parse_args()
     run(args.checkpoint, args.device)

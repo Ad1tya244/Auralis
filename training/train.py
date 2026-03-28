@@ -42,6 +42,7 @@ def build_dataloaders(batch_size: int = 64, subset: int = None, num_workers: int
     """Build CIFAR-10 train and test DataLoaders with augmentation."""
 
     train_transform = transforms.Compose([
+        transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
         transforms.ToTensor(),
@@ -175,7 +176,7 @@ def main():
                         help="Use a small subset (for smoke tests)")
     parser.add_argument("--device",     type=str,   default="auto",
                         choices=["auto", "cuda", "mps", "cpu"])
-    parser.add_argument("--save-dir",   type=str,   default="experiments/")
+    parser.add_argument("--save-dir",   type=str,   default="models/")
     parser.add_argument("--num-workers", type=int,  default=2)
     args = parser.parse_args()
 
@@ -208,8 +209,8 @@ def main():
 
     # --- Loss & Optimiser ---
     loss_fn   = SDNNLoss(lambda1=args.lambda1, lambda2=args.lambda2)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.5, verbose=True)
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
     # --- Checkpoint directory ---
     save_dir = os.path.join(
@@ -233,7 +234,7 @@ def main():
         val_metrics           = evaluate(model, test_loader, loss_fn, device)
         val_loss, val_acc     = val_metrics["loss"], val_metrics["accuracy"]
 
-        scheduler.step(val_loss)
+        scheduler.step()
         elapsed = time.time() - t0
 
         history["train_loss"].append(train_loss)

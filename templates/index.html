@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SDNN — Self-Diagnosing Neural Network</title>
-  <meta name="description" content="Upload any image and let the Self-Diagnosing Neural Network predict its class with calibrated confidence and error probability scores." />
+  <title>Auralis — Self-Diagnosing Neural Network</title>
+  <meta name="description" content="Upload any image and let the Self-Diagnosing Neural Network predict its class with calibrated confidence, entropy, and error probability." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -12,34 +13,37 @@
 </head>
 <body>
 
-  <!-- ── Hero Header ─────────────────────────────────────────── -->
+  <!-- ── Hero ───────────────────────────────────────────────── -->
   <header class="hero">
+    <canvas class="hero-particles" id="heroParticles"></canvas>
     <div class="hero-bg-grid"></div>
     <div class="hero-orb orb-1"></div>
     <div class="hero-orb orb-2"></div>
     <div class="hero-content">
       <div class="badge">🤖 Autonomous Perception</div>
       <h1 class="hero-title">
-        Self-Diagnosing<br/>
-        <span class="gradient-text">Neural Network</span>
+        Auralis<br/>
+        <span class="gradient-text">Self-Diagnosing Neural Network</span>
       </h1>
       <p class="hero-subtitle">
         Upload any image. The SDNN predicts its class — and tells you
-        <em>how confident</em> it is, and <em>how likely</em> it made a mistake.
+        <em>how confident</em> it is, <em>how likely</em> it made a mistake,
+        and <em>how decisive</em> the prediction is.
       </p>
       <div class="hero-chips">
         <span class="chip">ResNet-18 Backbone</span>
         <span class="chip">3-Head Architecture</span>
         <span class="chip">CIFAR-10</span>
         <span class="chip">Calibrated Confidence</span>
+        <span class="chip">Shannon Entropy</span>
       </div>
     </div>
   </header>
 
-  <!-- ── Main Content ────────────────────────────────────────── -->
+  <!-- ── Main ───────────────────────────────────────────────── -->
   <main class="main-container">
 
-    <!-- Upload Section -->
+    <!-- Upload -->
     <section class="upload-section">
       <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Upload image">
         <input type="file" id="fileInput" accept="image/*" hidden />
@@ -54,8 +58,6 @@
         <p class="upload-sub">or <span class="upload-link">click to browse</span></p>
         <p class="upload-formats">JPEG · PNG · WebP · BMP</p>
       </div>
-
-      <!-- Preview -->
       <div class="preview-card" id="previewCard" hidden>
         <img id="previewImg" src="" alt="Uploaded image preview" />
         <button class="change-btn" id="changeBtn" type="button">Change Image</button>
@@ -68,6 +70,7 @@
         <span id="analyzeBtnText">Analyze with SDNN</span>
         <div class="btn-spinner" id="btnSpinner" hidden></div>
       </button>
+      <p class="analyze-hint">or press <kbd>Enter</kbd></p>
     </div>
 
     <!-- Error Toast -->
@@ -80,8 +83,8 @@
     <!-- Results Panel -->
     <section class="results-panel" id="resultsPanel" hidden>
 
-      <!-- Top: Main Prediction -->
-      <div class="result-hero-card">
+      <!-- Hero Card -->
+      <div class="result-hero-card" id="resultHeroCard">
         <div class="result-emoji" id="resultEmoji"></div>
         <div class="result-meta">
           <span class="result-label">Predicted Class</span>
@@ -89,12 +92,21 @@
           <span class="result-context" id="resultContext"></span>
         </div>
         <div class="reliability-badge" id="reliabilityBadge"></div>
+        <div class="result-actions">
+          <button class="action-btn" id="copyBtn" type="button" title="Copy summary to clipboard">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button class="action-btn" id="exportBtn" type="button" title="Download as PNG">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PNG
+          </button>
+        </div>
       </div>
 
-      <!-- Stats Row -->
+      <!-- Stats Row (4 cards) -->
       <div class="stats-row">
 
-        <!-- Confidence Card -->
         <div class="stat-card">
           <div class="stat-header">
             <span class="stat-icon">🎯</span>
@@ -102,13 +114,10 @@
             <span class="stat-info" title="The calibrated probability that the model's prediction is correct.">ⓘ</span>
           </div>
           <div class="stat-value" id="confidenceValue">—</div>
-          <div class="stat-bar-track">
-            <div class="stat-bar stat-bar-confidence" id="confidenceBar"></div>
-          </div>
+          <div class="stat-bar-track"><div class="stat-bar stat-bar-confidence" id="confidenceBar"></div></div>
           <p class="stat-desc">Model's calibrated self-confidence</p>
         </div>
 
-        <!-- Error Probability Card -->
         <div class="stat-card">
           <div class="stat-header">
             <span class="stat-icon">🔍</span>
@@ -116,13 +125,10 @@
             <span class="stat-info" title="The model's estimate of how likely it made a mistake on this input.">ⓘ</span>
           </div>
           <div class="stat-value" id="errorProbValue">—</div>
-          <div class="stat-bar-track">
-            <div class="stat-bar stat-bar-error" id="errorProbBar"></div>
-          </div>
+          <div class="stat-bar-track"><div class="stat-bar stat-bar-error" id="errorProbBar"></div></div>
           <p class="stat-desc">Likelihood of a prediction mistake</p>
         </div>
 
-        <!-- Max Softmax Card -->
         <div class="stat-card">
           <div class="stat-header">
             <span class="stat-icon">📊</span>
@@ -130,28 +136,53 @@
             <span class="stat-info" title="Raw softmax probability for the top predicted class.">ⓘ</span>
           </div>
           <div class="stat-value" id="softmaxValue">—</div>
-          <div class="stat-bar-track">
-            <div class="stat-bar stat-bar-softmax" id="softmaxBar"></div>
-          </div>
+          <div class="stat-bar-track"><div class="stat-bar stat-bar-softmax" id="softmaxBar"></div></div>
           <p class="stat-desc">Raw softmax output for top class</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon">🌊</span>
+            <span class="stat-name">Prediction Entropy</span>
+            <span class="stat-info" title="Shannon entropy over all 10 classes. Lower = more decisive. Max ≈ 2.30 nats (uniform).">ⓘ</span>
+          </div>
+          <div class="stat-value" id="entropyValue">—</div>
+          <div class="stat-bar-track"><div class="stat-bar stat-bar-entropy" id="entropyBar"></div></div>
+          <p class="stat-desc">Spread vs. decisiveness of output</p>
         </div>
 
       </div>
 
-      <!-- Full Class Distribution -->
+      <!-- Distribution Card -->
       <div class="distribution-card">
         <h3 class="dist-title">All-Class Probability Distribution</h3>
-        <p class="dist-sub">Softmax probabilities across all 10 CIFAR-10 classes</p>
-        <div class="dist-chart" id="distChart"></div>
+        <p class="dist-sub">Softmax probabilities across all 10 CIFAR-10 classes · Hover slices to explore</p>
+        <div class="dist-wrapper">
+          <canvas id="distCanvas"></canvas>
+          <div class="dist-legend" id="distLegend"></div>
+        </div>
       </div>
 
     </section>
 
+    <!-- History Panel -->
+    <section class="history-panel" id="historyPanel" hidden>
+      <div class="history-header">
+        <h3 class="history-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Session History
+        </h3>
+        <span class="history-count" id="historyCount">0</span>
+        <button class="clear-btn" id="clearHistoryBtn" type="button">Clear All</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
   </main>
 
-  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <!-- Footer -->
   <footer class="footer">
-    <p>SDNN · ResNet-18 + 3 Diagnostic Heads · CIFAR-10 · Built for Autonomous Perception</p>
+    <p>Auralis SDNN · ResNet-18 + 3 Diagnostic Heads · CIFAR-10 · Built for Autonomous Perception</p>
   </footer>
 
   <script src="/static/app.js"></script>

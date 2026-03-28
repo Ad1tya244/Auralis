@@ -29,7 +29,7 @@ from models.sdnn_model import CIFAR10_CLASSES
 # Config
 # ---------------------------------------------------------------------------
 
-CHECKPOINT_PATH = os.path.join(os.path.dirname(__file__), "models", "calibrated_sdnn_final.pth")
+CHECKPOINT_PATH = os.path.join(os.path.dirname(__file__), "models", "best_sdnn.pth")
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "bmp", "gif"}
 RELIABILITY_THRESHOLD = 0.30   # error_prob above this → trigger safe fallback
 
@@ -95,6 +95,11 @@ print(f"[SDNN] Ready — listening for requests...")
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
 
 @app.route("/")
 def index():
