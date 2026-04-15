@@ -23,7 +23,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from models.checkpoint_utils import load_sdnn_checkpoint
-from models.sdnn_model import CIFAR10_CLASSES
+from models.sdnn_model import CIFAR10_CLASSES, CIFAR10_MEAN, CIFAR10_STD
 
 # ---------------------------------------------------------------------------
 # Config
@@ -61,11 +61,11 @@ CLASS_CONTEXT = {
     "truck":      "Large vehicle detection",
 }
 
-# Normalisation that matches training
+# Normalisation that matches training (CIFAR-10 dataset mean/std)
 _TRANSFORM = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
 ])
 
 # ---------------------------------------------------------------------------
