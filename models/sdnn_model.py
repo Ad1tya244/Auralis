@@ -4,8 +4,8 @@ sdnn_model.py
 Self-Diagnosing Neural Network — architecture matched to best_sdnn.pth.
 
 Checkpoint metadata:
-  epoch   : 72
-  val_acc : 0.9382 (93.82%)
+  epoch       : 72
+  val_acc     : 0.9382 (93.82%)
   temperature : 0.8784
 
 Backbone : CIFARResNet18 (ResNet-18 adapted for 32×32 CIFAR images)

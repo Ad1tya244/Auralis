@@ -30,18 +30,28 @@ def load_sdnn_checkpoint(path: str, device: torch.device = None, num_classes: in
     ckpt = torch.load(path, map_location=device, weights_only=False)
 
     # --- Resolve state dict key ---
+    # Detect whether ckpt is a wrapper dict or a raw state_dict
+    is_raw_state_dict = False
     if "model_state" in ckpt:
         state_dict = ckpt["model_state"]
     elif "model_state_dict" in ckpt:
         state_dict = ckpt["model_state_dict"]
     else:
-        # Maybe the file IS the state dict directly
-        state_dict = ckpt
+        # Check if first value is a tensor → raw state_dict
+        first_val = next(iter(ckpt.values()), None)
+        if isinstance(first_val, torch.Tensor):
+            state_dict = ckpt
+            is_raw_state_dict = True
+        else:
+            state_dict = ckpt
 
     # --- Load model ---
     model = SDNN(num_classes=num_classes).to(device)
     model.load_state_dict(state_dict, strict=True)
     model.eval()
+
+    if is_raw_state_dict:
+        return model, None, {}
 
     # --- Temperature (post-hoc calibration scalar) ---
     temperature = ckpt.get("temperature", None)
